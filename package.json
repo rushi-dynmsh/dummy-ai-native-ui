@@ -1,0 +1,8 @@
+{
+  "name": "mediq-living-plant-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

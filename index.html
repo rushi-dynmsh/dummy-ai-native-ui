@@ -1,0 +1,64 @@
+<meta charset="utf-8">
+<title>MedIQ Living Plant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap">
+<link rel="stylesheet" href="styles.css">
+
+<div id="app" class="app">
+  <svg id="stage" class="stage" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-label="Plant A, live view">
+    <defs id="defs"></defs>
+    <g id="world">
+      <g id="user">
+        <g id="layer-plant"></g>
+        <g id="layer-machine"></g>
+        <g id="layer-logical"></g>
+      </g>
+      <g id="layer-ai"></g>
+    </g>
+  </svg>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="wordmark">MedIQ</span>
+      <nav id="crumbs" class="crumbs" aria-label="Where you are"></nav>
+    </div>
+    <div class="topbar-right">
+      <span id="clock" class="clock" aria-label="Plant time"></span>
+      <div class="seg" role="group" aria-label="View">
+        <button id="view-physical" class="seg-btn is-on" type="button" aria-pressed="true">Physical</button>
+        <button id="view-logical" class="seg-btn" type="button" aria-pressed="false">Logical</button>
+      </div>
+      <div class="seg" role="group" aria-label="Colour theme">
+        <button id="theme-system" class="seg-btn is-on" type="button" aria-pressed="true">Auto</button>
+        <button id="theme-light" class="seg-btn" type="button" aria-pressed="false">Light</button>
+        <button id="theme-dark" class="seg-btn" type="button" aria-pressed="false">Dark</button>
+      </div>
+      <span id="alarm-count" class="alarm-count" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <p id="status-line" class="status-line" aria-live="polite"></p>
+
+  <div id="ai-layer" class="ai-layer"></div>
+  <aside id="sensor-panel" class="sensor-panel" hidden></aside>
+  <section id="event-log" class="event-log" aria-label="Event log"></section>
+  <div class="zoom-ctl" role="group" aria-label="Zoom">
+    <button id="zoom-out" type="button" aria-label="Zoom out">&minus;</button>
+    <button id="zoom-fit" type="button" aria-pressed="true">Fit</button>
+    <button id="zoom-in" type="button" aria-label="Zoom in">+</button>
+  </div>
+
+  <button id="tech-btn" class="tech-btn" type="button" aria-label="How this works" title="How this works">
+    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+      <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z"/>
+      <path d="M7.25 4.75a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0zM7.25 7h1.5v4.5h-1.5z"/>
+    </svg>
+  </button>
+  <div id="tech-overlay" class="tech-overlay" hidden role="dialog" aria-modal="true" aria-label="How this works: backend data mapping"></div>
+
+  <footer id="player" class="player"></footer>
+  <div id="about" class="about" hidden role="dialog" aria-label="About this prototype"></div>
+</div>
+
+<script type="module" src="src/app.js"></script>
