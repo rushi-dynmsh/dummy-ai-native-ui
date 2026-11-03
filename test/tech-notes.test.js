@@ -69,3 +69,38 @@ test("tech-notes: summary counts correctly sum up", () => {
   assert.ok(counts.PRESENTATION > 0, "PRESENTATION count should be > 0");
 });
 
+test("tech-notes: grounded UI features match backend capabilities", () => {
+  const notesMap = new Map(getAllTechNotes().map((n) => [n.id, n]));
+
+  // AI Copilot grounded features
+  const safetyBanner = notesMap.get("ai-safety-banner");
+  assert.ok(safetyBanner, "ai-safety-banner note must exist");
+  assert.equal(safetyBanner.status, "EXISTS");
+
+  const lookingSteps = notesMap.get("ai-looking-steps");
+  assert.ok(lookingSteps, "ai-looking-steps note must exist");
+  assert.equal(lookingSteps.status, "EXISTS");
+
+  const citations = notesMap.get("ai-source-citations");
+  assert.ok(citations, "ai-source-citations note must exist");
+  assert.equal(citations.status, "EXISTS");
+
+  // Status & Palette features
+  const watchState = notesMap.get("status-machine-watch-state");
+  assert.ok(watchState, "status-machine-watch-state note must exist");
+  assert.equal(watchState.status, "EXISTS");
+
+  const paletteStudio = notesMap.get("status-palette-studio");
+  assert.ok(paletteStudio, "status-palette-studio note must exist");
+  assert.equal(paletteStudio.status, "PRESENTATION");
+
+  // Eliminated imaginary fluff
+  const scanLine = notesMap.get("ai-spotlight-scan");
+  assert.ok(scanLine, "ai-spotlight-scan note must exist");
+  assert.equal(scanLine.status, "PRESENTATION");
+
+  const cameraTour = notesMap.get("ai-patrol-tour");
+  assert.ok(cameraTour, "ai-patrol-tour note must exist");
+  assert.equal(cameraTour.status, "PRESENTATION");
+});
+

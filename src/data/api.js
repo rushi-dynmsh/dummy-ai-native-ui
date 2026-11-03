@@ -68,6 +68,7 @@ export function createDataLayer({ source = "generated", seed = 447 } = {}) {
   function rollup(code, t) {
     const al = activeAlarms(code, t).alarms;
     const an = anomalies(code, t).items;
+    const isWatched = !byCode[code].illustrative;
     return {
       online: true,
       last_data_at: iso(t),
@@ -76,6 +77,8 @@ export function createDataLayer({ source = "generated", seed = 447 } = {}) {
       unknown_alarms: 0,
       open_anomalies: an.length,
       highest_severity: highest(an.map((a) => a.severity), SEVERITY_RANK),
+      watch_state: isWatched ? "watched" : "not_watched",
+      watch_reason: isWatched ? null : "waiting for model files",
     };
   }
 
@@ -89,7 +92,14 @@ export function createDataLayer({ source = "generated", seed = 447 } = {}) {
       if (!line) area.lines.push((line = { ...m.line, cells: [] }));
       let cell = line.cells.find((c) => c.code === m.cell.code);
       if (!cell) line.cells.push((cell = { ...m.cell, machines: [] }));
-      cell.machines.push({ site: SITE.code, code: m.code, name: m.name, machine_id: MACHINES.indexOf(m) + 1, rollup: rollup(m.code, t) });
+      cell.machines.push({
+        site: SITE.code,
+        code: m.code,
+        name: m.name,
+        machine_id: MACHINES.indexOf(m) + 1,
+        asset_type: m.assetType,
+        rollup: rollup(m.code, t),
+      });
     }
     const all = areas.flatMap((a) => a.lines.flatMap((l) => l.cells.flatMap((c) => c.machines)));
     const group = (ms) => ({
@@ -100,6 +110,8 @@ export function createDataLayer({ source = "generated", seed = 447 } = {}) {
       unknown_alarms: 0,
       open_anomalies: ms.reduce((n, x) => n + x.rollup.open_anomalies, 0),
       highest_severity: highest(ms.map((x) => x.rollup.highest_severity).filter(Boolean), SEVERITY_RANK),
+      not_watched: ms.filter((x) => x.rollup.watch_state === "not_watched").length,
+      stalled: ms.filter((x) => x.rollup.watch_state === "stalled").length,
     });
     for (const a of areas) {
       for (const l of a.lines) {
@@ -116,6 +128,71 @@ export function createDataLayer({ source = "generated", seed = 447 } = {}) {
     };
   }
 
+  function overviewAnomalies(t) {
+    t = clampT(t);
+    const items = [];
+    for (const m of MACHINES) {
+      const an = anomalies(m.code, t).items;
+      for (const ep of an) {
+        items.push({
+          site: SITE.code,
+          machine: m.code,
+          machine_name: m.name,
+          ...ep,
+        });
+      }
+    }
+    return { items, total: items.length };
+  }
+
+  function overviewAlarms(t) {
+    t = clampT(t);
+    const items = [];
+    for (const m of MACHINES) {
+      const al = activeAlarms(m.code, t).alarms;
+      for (const a of al) {
+        items.push({
+          site: SITE.code,
+          machine: m.code,
+          machine_name: m.name,
+          ...a,
+        });
+      }
+    }
+    return { items, total: items.length };
+  }
+
+  function health(t) {
+    t = clampT(t);
+    return {
+      gateway: {
+        reachable: true,
+        status: "ok",
+        gateway_id: "gw-main-01",
+        machines: MACHINES.map((m) => m.code),
+        devices: ["opcua-rig-server"],
+      },
+      ingester: {
+        status: "healthy",
+        queue_depth: 0,
+        dead_letters: 0,
+        lag_ms: 12,
+      },
+      database: {
+        status: "connected",
+        driver: "asyncpg",
+        pool_size: 10,
+        pool_available: 9,
+      },
+      intelligence: {
+        status: "active",
+        last_eval_at: iso(t),
+        detectors_loaded: 4,
+      },
+      checked_at: iso(t),
+    };
+  }
+
   function dashboard(code, t) {
     t = clampT(t);
     const m = byCode[code];
@@ -126,6 +203,8 @@ export function createDataLayer({ source = "generated", seed = 447 } = {}) {
       unit: s.unit,
       component: s.component,
       slot: s.slot,
+      range_low: s.healthy ? s.healthy.mean - 2 * s.healthy.spread : null,
+      range_high: s.healthy ? s.healthy.mean + 2 * s.healthy.spread : null,
       value: story.values[code][s.slot][t],
       at: iso(t),
       stale: false,
@@ -136,10 +215,46 @@ export function createDataLayer({ source = "generated", seed = 447 } = {}) {
       end: iso(t),
       alarms: story.alarmTransitions
         .filter((a) => a.machine === code && a.raisedS <= t)
-        .map((a) => ({ alarm_id: `${code}:${a.alarmName}`, name: a.alarmName, priority: m.alarms.find((x) => x.name === a.alarmName).priority, started_at: iso(a.raisedS), ended_at: a.clearedS !== null && a.clearedS <= t ? iso(a.clearedS) : null })),
-      episodes: anomalies(code, t).items.map((e) => ({ episode_id: e.episode_id, component: e.component, kind: e.kind, state: e.state, severity: e.severity, started_at: e.started_at, ended_at: null })),
+        .map((a) => ({
+          alarm_id: `${code}:${a.alarmName}`,
+          name: a.alarmName,
+          priority: m.alarms.find((x) => x.name === a.alarmName).priority,
+          started_at: iso(a.raisedS),
+          ended_at: a.clearedS !== null && a.clearedS <= t ? iso(a.clearedS) : null,
+        })),
+      episodes: anomalies(code, t).items.map((e) => ({
+        episode_id: e.episode_id,
+        component: e.component,
+        kind: e.kind,
+        state: e.state,
+        severity: e.severity,
+        started_at: e.started_at,
+        ended_at: null,
+      })),
     };
-    return { machine: { site: SITE.code, machine: code, name: m.name, asset_type: m.assetType }, has_data: true, latest, timeline, checked_at: iso(t) };
+    return {
+      machine: { site: SITE.code, machine: code, name: m.name, asset_type: m.assetType },
+      has_data: true,
+      latest,
+      timeline,
+      checked_at: iso(t),
+    };
+  }
+
+  function cycles(code, t) {
+    t = clampT(t);
+    const checks = story.checkedCycles.filter((c) => c.machine === code && c.atS <= t);
+    const items = checks.map((c, i) => ({
+      machine_cycle_id: i + 1,
+      cycle_number: c.cycleNumber,
+      state: "closed",
+      start_ts: iso(c.atS - 60),
+      end_ts: iso(c.atS),
+      duration_s: 60.0,
+      complete: true,
+      has_features: true,
+    }));
+    return { items, total: items.length, reason: byCode[code].illustrative ? "This machine has no cycles" : null };
   }
 
   function series(code, slot, fromT, toT) {
@@ -168,8 +283,8 @@ export function createDataLayer({ source = "generated", seed = 447 } = {}) {
     }
     const urgent =
       current.report.safety_flags.length > 0 ||
-      activeAlarms(MACHINES[0].code, t).alarms.some((a) => PRIORITY_RANK[a.priority] >= PRIORITY_RANK.high);
-    return { ...base, state: urgent ? "urgent" : "explaining", analysis: current, progress: 1, stepIndex: null };
+      story.alarmTransitions.some((a) => a.machine === MACHINES[0].code && a.raisedS <= t && byCode[a.machine].alarms.find((x) => x.name === a.alarmName).priority === "urgent");
+    return { ...base, state: urgent ? "urgent" : "explaining", analysis: current, previous: null, progress: 1, stepIndex: current.steps.length - 1 };
   }
 
   function chat(question) {
@@ -195,12 +310,33 @@ export function createDataLayer({ source = "generated", seed = 447 } = {}) {
     const ep = story.episode;
     out.push({ t: ep.openedS, kind: "warning", priority: "warning", text: `Early warning opened: cooler, ${byCode[ep.machine].name}` });
     out.push({ t: ep.criticalS, kind: "warning", priority: "critical", text: `Early warning on the cooler is now critical` });
-    for (const a of ANALYSES) out.push({ t: a.startS + a.durationS, kind: "ai", priority: null, text: `MedIQ note ready: ${a.title.toLowerCase()}` });
+    for (const a of ANALYSES) out.push({ t: a.startS + a.durationS, kind: "ai", priority: null, text: `MedIQ report: ${a.title.toLowerCase()}` });
     return out.sort((x, y) => y.t - x.t);
   })();
+
   function eventLog(t, n) {
     return LOG.filter((e) => e.t <= t).slice(0, n).map((e) => ({ ...e, time: clockTime(e.t) }));
   }
 
-  return { clockTime, clockDate, eventLog, overview, activeAlarms, anomalies, dashboard, series, checkedCycles, aiState, chat, events, machines: MACHINES, story };
+  return {
+    clockTime,
+    clockDate,
+    eventLog,
+    overview,
+    overviewAnomalies,
+    overviewAlarms,
+    health,
+    activeAlarms,
+    anomalies,
+    dashboard,
+    cycles,
+    series,
+    checkedCycles,
+    aiState,
+    chat,
+    events,
+    machines: MACHINES,
+    story,
+    FALLBACK,
+  };
 }
