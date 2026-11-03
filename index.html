@@ -1,9 +1,14 @@
-<meta charset="utf-8">
-<title>MedIQ Living Plant</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap">
-<link rel="stylesheet" href="styles.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>MedIQ Living Plant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
 <div id="app" class="app">
   <svg id="stage" class="stage" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-label="Plant A, live view">
@@ -22,6 +27,14 @@
     <div class="topbar-left">
       <span class="wordmark">MedIQ</span>
       <nav id="crumbs" class="crumbs" aria-label="Where you are"></nav>
+      <nav class="monitor-nav" id="monitor-nav" aria-label="Console monitor sections">
+        <button type="button" class="monitor-nav-item is-active" data-section="overview" title="Physical & logical plant drawing (primary screen)">Overview</button>
+        <button type="button" class="monitor-nav-item" data-section="machines" title="Fleet machines roster & rollups">Machines</button>
+        <button type="button" class="monitor-nav-item" data-section="plc-alarms" title="Active PLC alarms journal">PLC Alarms</button>
+        <button type="button" class="monitor-nav-item" data-section="anomalies" title="Statistical anomaly episodes">Anomalies</button>
+        <button type="button" class="monitor-nav-item" data-section="live-data" title="Real-time telemetry stream">Live Data</button>
+        <button type="button" class="monitor-nav-item" data-section="health" title="Gateway & pipeline health">Health</button>
+      </nav>
     </div>
     <div class="topbar-right">
       <span id="clock" class="clock" aria-label="Plant time"></span>
@@ -34,12 +47,28 @@
         <button id="theme-light" class="seg-btn" type="button" aria-pressed="false">Light</button>
         <button id="theme-dark" class="seg-btn" type="button" aria-pressed="false">Dark</button>
       </div>
-      <span id="alarm-count" class="alarm-count" aria-live="polite"></span>
+      <button id="palette-btn" class="seg-btn" type="button" aria-label="Palette Studio" title="Experiment with color combinations live">🎨 Palette</button>
+      <button id="ai-toggle-btn" class="seg-btn is-on" type="button" aria-label="Toggle MedIQ Copilot" title="MedIQ Copilot">✦ Copilot</button>
+      <button id="alarm-count" class="alarm-count" aria-live="polite" title="Click to view active PLC alarms table"></button>
     </div>
   </header>
 
+  <nav id="machine-subnav" class="machine-subnav" aria-label="Machine tabs" hidden>
+    <div class="machine-subnav-items">
+      <span class="machine-subnav-label">Machine Views:</span>
+      <button type="button" class="machine-subtab is-active" data-tab="dashboard">Dashboard (Schematic)</button>
+      <button type="button" class="machine-subtab" data-tab="live-data">Live Data</button>
+      <button type="button" class="machine-subtab" data-tab="per-cycle">Per-Cycle</button>
+      <button type="button" class="machine-subtab" data-tab="plc-alarms">PLC Alarms</button>
+      <button type="button" class="machine-subtab" data-tab="anomalies">Anomalies</button>
+      <button type="button" class="machine-subtab" data-tab="baseline">Baseline</button>
+    </div>
+  </nav>
+
   <p id="status-line" class="status-line" aria-live="polite"></p>
 
+  <div id="monitor-sheet-container"></div>
+  <div id="palette-container"></div>
   <div id="ai-layer" class="ai-layer"></div>
   <aside id="sensor-panel" class="sensor-panel" hidden></aside>
   <section id="event-log" class="event-log" aria-label="Event log"></section>
@@ -62,3 +91,5 @@
 </div>
 
 <script type="module" src="src/app.js"></script>
+</body>
+</html>

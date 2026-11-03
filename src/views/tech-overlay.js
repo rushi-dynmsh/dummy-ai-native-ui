@@ -56,7 +56,7 @@ export function createTechOverlay({ root, button, getNavigation, data }) {
   }, titleRow);
 
   // Summary counter bar
-  const summaryBar = html("div", { class: "tech-summary-bar", "aria-live": "polite" }, header);
+  const summaryBar = html("div", { class: "tech-summary-banner", "aria-live": "polite" }, header);
 
   // Tabs for switching screens/views inside the overlay
   const tabNav = html("nav", { class: "tech-tabs", "aria-label": "Filter by screen" }, header);
@@ -70,13 +70,13 @@ export function createTechOverlay({ root, button, getNavigation, data }) {
     { id: "ai", label: "AI Copilot" },
     { id: "status", label: "Status line" },
     { id: "events", label: "Event log" },
-    { id: "all", label: "All (44)" },
+    { id: "all", label: `All (${getAllTechNotes().length})` },
   ];
 
   const tabButtons = new Map();
   for (const tab of TAB_DEFS) {
     const btn = html("button", {
-      class: `tech-tab-btn ${tab.id === activeTab ? "is-active" : ""}`,
+      class: `tech-tab ${tab.id === activeTab ? "is-active" : ""}`,
       type: "button",
       text: tab.label,
     }, tabNav);
@@ -88,7 +88,7 @@ export function createTechOverlay({ root, button, getNavigation, data }) {
   }
 
   // Scrollable list body
-  const listBody = html("div", { class: "tech-list-body" }, panel);
+  const listBody = html("div", { class: "tech-content" }, panel);
 
   // Gap detail modal / flyout inside panel
   const gapModal = html("div", { class: "tech-gap-modal", hidden: true }, panel);
@@ -192,15 +192,15 @@ export function createTechOverlay({ root, button, getNavigation, data }) {
     }
 
     for (const item of notesToShow) {
-      const card = html("article", { class: `tech-card tech-card--${item.status.toLowerCase()}` }, listBody);
+      const card = html("article", { class: `tech-feature-card tech-feature-card--${item.status.toLowerCase()}` }, listBody);
 
       // Card Header
-      const cardHead = html("div", { class: "tech-card-head" }, card);
-      const titleEl = html("h3", { class: "tech-card-title", text: item.name }, cardHead);
+      const cardHead = html("div", { class: "tech-card-top" }, card);
+      const titleEl = html("h3", { class: "tech-feature-name", text: item.name }, cardHead);
 
       const badgesWrap = html("div", { class: "tech-card-badges" }, cardHead);
       const statusChip = html("span", {
-        class: `tech-chip tech-chip--${item.status.toLowerCase()}`,
+        class: `tech-status-chip tech-status-${item.status.toLowerCase()}`,
         text: item.status,
       }, badgesWrap);
 
